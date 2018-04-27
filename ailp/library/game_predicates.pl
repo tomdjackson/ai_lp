@@ -48,7 +48,7 @@ internal_grid_size(20).  % may be changed in testing
 % and Dirs subset [n,e,s,w] gives the possible directions
 
 dynamic_params(Th, Ch, Or, T) :-
-  ( part_module(4)   -> (Th=[10,[n,e,s,w]], Ch=[0,[]], Or=[0,[]], T=20)  % 10 things move every 20 seconds in all directions
+  ( part_module(4)   -> (Th=[10,[n,e,s,w]], Ch=[0,[]], Or=[0,[]], T=5)  % 10 things move every 20 seconds in all directions
   ; part_module(test)-> (Th=[40,[n,s]], Ch=[2,[w,e]], Or=[2,[n,s,w,e]], T=20)  % a lot more movement
   ; otherwise -> (Th=[0,[]], Ch=[0,[]], Or=[0,[]], T=100)  % no movement -- Part 1, 2, 3
   ).

@@ -1,11 +1,13 @@
 candidate_number(21611).
 
-% solve_task(Task,Cost):-
-%   my_agent(Agent),
-%   query_world( agent_current_position, [Agent,P] ),
-%   solve_task_bt(Task,[c(0,P),P],0,R,Cost,_NewPos),!,  % prune choice point for efficiency
-%   reverse(R,[_Init|Path]),
-%   query_world( agent_do_moves, [Agent,Path] ).
+run_part_4(_,[_,[]]):-
+  true.
+run_part_4(Task, [Agent, Path]):-
+  Path = [Head|Tail],
+  ( query_world(check_pos, [Head, empty]) ->
+    query_world( agent_do_moves, [Agent,[Head]] ), run_part_4(Task, [Agent, Tail])
+  ; otherwise -> write("BLOCKED, FINIDING NEW ROUTE"),nl,solve_task(Task, _)
+  ).
 
 solve_task(go(X),Cost):-
   my_agent(Agent),
@@ -14,43 +16,63 @@ solve_task(go(X),Cost):-
   X = p(I,J),
   write("("), write(I), write(","), write(J), write(")"),nl,
   query_world( agent_current_position, [Agent,P] ),
-  solve_task_a_star(go(X),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!,
+  (part_module(4) ->repeat, solve_task_a_star(go(X),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ; otherwise -> solve_task_a_star(go(X),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ),
   reverse(R,[_Init|Path]),
-  query_world( agent_do_moves, [Agent,Path] ).
+  ( part_module(4) -> run_part_4(go(X), [Agent, Path])
+  ; query_world( agent_do_moves, [Agent,Path] )
+  ).
 
 solve_task(find(o(X)),Cost):-
   my_agent(Agent),
   check_energy(Agent),
   write("GOING TO ORACLE"),nl,
   query_world( agent_current_position, [Agent,P] ),
-  solve_task_breadth(find(o(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!,
+  (part_module(4) ->repeat, solve_task_breadth(find(o(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ; otherwise -> solve_task_breadth(find(o(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ),
   reverse(R,[_Init|Path]),
-  query_world( agent_do_moves, [Agent,Path] ).
+  ( part_module(4) -> run_part_4(find(o(X)), [Agent, Path])
+  ; query_world( agent_do_moves, [Agent,Path] )
+  ).
 
 solve_task(find_next_oracle(o(X)),Cost):-
   my_agent(Agent),
   check_energy(Agent),
   write("GOING TO NEXT ORACLE"),nl,
   query_world( agent_current_position, [Agent,P] ),
-  solve_task_breadth(find_next_oracle(o(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!,
+  (part_module(4) ->repeat, solve_task_breadth(find_next_oracle(o(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ; otherwise -> solve_task_breadth(find_next_oracle(o(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ),
   reverse(R,[_Init|Path]),
-  query_world( agent_do_moves, [Agent,Path] ).
+  ( part_module(4) -> run_part_4(find_next_oracle(o(X)), [Agent, Path])
+  ; query_world( agent_do_moves, [Agent,Path] )
+  ).
 
 solve_task(find(c(X)),Cost):-
   my_agent(Agent),
   write("GOING TO CHARGING STATION"),nl,
   query_world( agent_current_position, [Agent,P] ),
-  solve_task_breadth(find(c(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!,
+  (part_module(4) -> repeat, solve_task_breadth(find(c(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ; otherwise -> solve_task_breadth(find(c(X)),[[c(0,0,P),P]],R,Cost,_NewPos,[]),!
+  ),
   reverse(R,[_Init|Path]),
-  query_world( agent_do_moves, [Agent,Path] ),
-  query_world( agent_topup_energy, [Agent, c(X)]).
+  ( part_module(4) -> run_part_4(find(c(X)), [Agent, Path])
+  ; otherwise -> query_world( agent_do_moves, [Agent,Path] )
+  ),
+  write("TOPPING UP"),nl,
+  query_world( agent_topup_energy, [Agent, c(X)]),
+  query_world(agent_current_energy, [Agent, Energy]),
+  write("ENERGY = "), write(Energy),nl.
+
 
 check_energy(Agent):-
   write("CHECKING ENERGY"),nl,
   query_world(agent_current_energy, [Agent, Energy]),
   write("ENERGY = "),
   write(Energy),nl,
-  ( Energy > 50 -> true
+  ( Energy > 45 -> true
   ; otherwise -> solve_task(find(c(_)), A)
   ).
 
@@ -120,8 +142,8 @@ achieved(find_next_oracle(O), Current, RPath, Cost, NewPos) :-
   Current = [c(Cost, NewPos)|RPath],
   my_agent(Agent),
   ( O=none -> true
-  ; otherwise -> RPath = [Last|_], map_adjacent(Last,_,O), write("ORACLE FOUND, I = "), write(O), nl,
-  \+ query_world(agent_check_oracle, [Agent, O ])
+  ; otherwise -> RPath = [Last|_], map_adjacent(Last,_,O),
+  \+ query_world(agent_check_oracle, [Agent, O ]), write("ORACLE FOUND, I = "), write(O), nl
   ).
 achieved(find(O),Current,RPath,Cost,NewPos) :-
   Current = [c(Cost,NewPos)|RPath],
